@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ぼんやりメモ（プロトタイプ）</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#0b0b0c" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🌫 ぼんやりメモ</div>
+    <div class="actions">
+      <button class="iconbtn" id="btnInbox" aria-label="受信箱">受信箱</button>
+      <button class="iconbtn" id="btnCapture" aria-label="入力">入力</button>
+      <button class="iconbtn" id="btnExport" aria-label="書き出し">書き出し</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Capture -->
+    <section id="viewCapture" class="view">
+      <div class="captureWrap">
+        <textarea id="input" class="input"
+          placeholder="思いつきを一行でも。書いたら右下の「追加」か、⌘/Ctrl+Enterでカード化。"></textarea>
+        <div class="captureFooter">
+          <div class="hint">自動保存：なし（試作） / 追加でカード化</div>
+          <button id="btnAdd" class="primary">追加</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inbox -->
+    <section id="viewInbox" class="view hidden">
+      <div class="toolbar">
+        <button id="btnSelectAll" class="ghost">全選択</button>
+        <button id="btnClearSel" class="ghost">選択解除</button>
+        <button id="btnDeleteSel" class="danger">選択を削除</button>
+      </div>
+
+      <div id="cards" class="cards"></div>
+      <div class="empty" id="emptyState">まだカードがありません。入力で追加できます。</div>
+    </section>
+
+    <!-- Export -->
+    <section id="viewExport" class="view hidden">
+      <div class="exportBox">
+        <h2>Markdown書き出し</h2>
+        <p class="muted">受信箱でチェックしたカードを、zip（1カード=1md）で書き出します。</p>
+
+        <div class="exportRow">
+          <label class="label">ファイル名の接頭辞（任意）</label>
+          <input id="prefix" class="text" value="bonmemo_" />
+        </div>
+
+        <div class="exportRow">
+          <button id="btnExportZip" class="primary">zipを書き出す</button>
+          <button id="btnExportOne" class="ghost">1ファイルにまとめて書き出す</button>
+        </div>
+
+        <p class="muted small">
+          ※zip書き出しはJSZipを使用します（CDN読み込み）。オフライン完結は次段階で対応。
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
