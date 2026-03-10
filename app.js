@@ -1,4 +1,4 @@
-// ぼんやりメモ（タグ付き試作）
+// ぼんやりメモ（タグ検索付き）
 
 const STORAGE_KEY = "bonmemo_cards_v2";
 
@@ -25,6 +25,7 @@ const els = {
   btnExportZip: document.getElementById("btnExportZip"),
   btnExportOne: document.getElementById("btnExportOne"),
 };
+
 let activeTag = null;
 
 function nowISO() {
@@ -48,6 +49,8 @@ function extractTags(text) {
   return [...new Set(tags)];
 }
 
+/* storage */
+
 function loadCards() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -67,7 +70,10 @@ function saveCards(cards) {
 let cards = loadCards();
 let selected = new Set();
 
+/* view */
+
 function show(viewName) {
+
   els.viewCapture.classList.toggle("hidden", viewName !== "capture");
   els.viewInbox.classList.toggle("hidden", viewName !== "inbox");
   els.viewExport.classList.toggle("hidden", viewName !== "export");
@@ -75,36 +81,51 @@ function show(viewName) {
   if (viewName === "capture") {
     setTimeout(() => els.input.focus(), 50);
   }
+
   if (viewName === "inbox") render();
 }
 
+/* add */
+
 function addCard(text) {
+
   const trimmed = (text ?? "").trim();
   if (!trimmed) return;
 
   const createdAt = nowISO();
   const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
   const tags = extractTags(trimmed);
 
   cards.unshift({ id, createdAt, text: trimmed, tags });
+
   saveCards(cards);
 
   els.input.value = "";
 }
 
+/* delete */
+
 function deleteSelected() {
+
   if (selected.size === 0) return;
 
   cards = cards.filter(c => !selected.has(c.id));
+
   selected.clear();
+
   saveCards(cards);
+
   render();
 }
 
 function toggleSelect(id, on) {
+
   if (on) selected.add(id);
   else selected.delete(id);
 }
+
+/* render */
 
 function render() {
 
@@ -115,6 +136,22 @@ function render() {
     : cards;
 
   els.emptyState.style.display = visibleCards.length ? "none" : "block";
+
+  if (activeTag) {
+
+    const tagInfo = document.createElement("div");
+
+    tagInfo.className = "meta";
+    tagInfo.style.marginBottom = "10px";
+    tagInfo.textContent = "タグ検索: #" + activeTag + "（タップで解除）";
+
+    tagInfo.onclick = () => {
+      activeTag = null;
+      render();
+    };
+
+    els.cards.appendChild(tagInfo);
+  }
 
   for (const c of visibleCards) {
 
@@ -137,21 +174,27 @@ function render() {
     chk.type = "checkbox";
     chk.className = "chk";
     chk.checked = selected.has(c.id);
-    chk.addEventListener("change", (e) => toggleSelect(c.id, e.target.checked));
+
+    chk.addEventListener("change", e => {
+      toggleSelect(c.id, e.target.checked);
+    });
 
     const editBtn = document.createElement("button");
     editBtn.className = "smallbtn";
     editBtn.textContent = "編集";
-    editBtn.addEventListener("click", () => {
+
+    editBtn.onclick = () => {
 
       els.input.value = c.text;
 
       cards = cards.filter(x => x.id !== c.id);
+
       selected.delete(c.id);
+
       saveCards(cards);
 
       show("capture");
-    });
+    };
 
     actions.appendChild(chk);
     actions.appendChild(editBtn);
@@ -166,7 +209,7 @@ function render() {
     card.appendChild(head);
     card.appendChild(body);
 
-    /* タグ表示 */
+    /* tags */
 
     if (c.tags && c.tags.length) {
 
@@ -194,26 +237,17 @@ function render() {
         };
 
         tagBox.appendChild(t);
-        if (activeTag) {
-
-          const tagInfo = document.createElement("div");
-
-          tagInfo.className = "meta";
-          tagInfo.style.marginBottom = "10px";
-
-          tagInfo.textContent = "タグ検索: #" + activeTag;
-
-          els.cards.prepend(tagInfo);
-        }
 
       });
 
       card.appendChild(tagBox);
-      els.cards.appendChild(card);
     }
-  }
 
+    els.cards.appendChild(card);
+  }
 }
+
+/* export */
 
 function selectedCards() {
   return cards.filter(c => selected.has(c.id));
@@ -265,6 +299,7 @@ async function exportZip() {
   }
 
   const zip = new JSZip();
+
   const pref = (els.prefix.value || "").trim() || "bonmemo_";
 
   for (const c of sel) {
@@ -305,44 +340,40 @@ els.btnAdd.addEventListener("click", () => {
   addCard(els.input.value);
 });
 
-els.input.addEventListener("keydown", (e) => {
+els.input.addEventListener("keydown", e => {
 
   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-
     e.preventDefault();
-
     addCard(els.input.value);
   }
+
 });
 
-els.btnInbox.addEventListener("click", () => show("inbox"));
-els.btnCapture.addEventListener("click", () => show("capture"));
-els.btnExport.addEventListener("click", () => show("export"));
+els.btnInbox.onclick = () => show("inbox");
+els.btnCapture.onclick = () => show("capture");
+els.btnExport.onclick = () => show("export");
 
-els.btnSelectAll.addEventListener("click", () => {
-
+els.btnSelectAll.onclick = () => {
   for (const c of cards) selected.add(c.id);
-
   render();
-});
+};
 
-els.btnClearSel.addEventListener("click", () => {
-
+els.btnClearSel.onclick = () => {
   selected.clear();
-
   render();
-});
+};
 
-els.btnDeleteSel.addEventListener("click", () => {
+els.btnDeleteSel.onclick = () => {
 
   if (selected.size === 0) return;
 
-  if (confirm("選択したカードを削除します。よろしいですか？"))
+  if (confirm("選択したカードを削除します。よろしいですか？")) {
     deleteSelected();
-});
+  }
+};
 
-els.btnExportZip.addEventListener("click", exportZip);
-els.btnExportOne.addEventListener("click", exportOneFile);
+els.btnExportZip.onclick = exportZip;
+els.btnExportOne.onclick = exportOneFile;
 
 /* init */
 
