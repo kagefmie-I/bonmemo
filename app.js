@@ -220,6 +220,9 @@ function render() {
       c.tags.forEach(tag => {
 
         const t = document.createElement("span");
+        if (tag === activeTag) {
+          t.classList.add("tagActive");
+        }
 
         t.textContent = "#" + tag;
         t.style.marginRight = "10px";
