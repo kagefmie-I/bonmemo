@@ -1,9 +1,6 @@
-// ぼんやりメモ（プロトタイプ）
-// - localStorage保存
-// - 1カード = 1メモ
-// - 受信箱で選択 → Markdown書き出し（zip or 1ファイル）
+// ぼんやりメモ（タグ付き試作）
 
-const STORAGE_KEY = "bonmemo_cards_v1";
+const STORAGE_KEY = "bonmemo_cards_v2";
 
 const els = {
   viewCapture: document.getElementById("viewCapture"),
@@ -34,15 +31,20 @@ function nowISO() {
 }
 
 function ymdhmLocal(d) {
-  // YYYY-MM-DD HH:MM (local)
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function ymdhmFile(d) {
-  // YYYY-MM-DD_HHMM
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+/* タグ抽出 */
+
+function extractTags(text){
+  const tags = [...text.matchAll(/#([^\s#]+)/g)].map(m => m[1]);
+  return [...new Set(tags)];
 }
 
 function loadCards() {
@@ -61,7 +63,7 @@ function saveCards(cards) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
-let cards = loadCards(); // newest first
+let cards = loadCards();
 let selected = new Set();
 
 function show(viewName) {
@@ -78,15 +80,20 @@ function show(viewName) {
 function addCard(text) {
   const trimmed = (text ?? "").trim();
   if (!trimmed) return;
+
   const createdAt = nowISO();
   const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  cards.unshift({ id, createdAt, text: trimmed });
+  const tags = extractTags(trimmed);
+
+  cards.unshift({ id, createdAt, text: trimmed, tags });
   saveCards(cards);
+
   els.input.value = "";
 }
 
 function deleteSelected() {
   if (selected.size === 0) return;
+
   cards = cards.filter(c => !selected.has(c.id));
   selected.clear();
   saveCards(cards);
@@ -103,7 +110,9 @@ function render() {
   els.emptyState.style.display = cards.length ? "none" : "block";
 
   for (const c of cards) {
+
     const d = new Date(c.createdAt);
+
     const card = document.createElement("div");
     card.className = "card";
 
@@ -127,12 +136,13 @@ function render() {
     editBtn.className = "smallbtn";
     editBtn.textContent = "編集";
     editBtn.addEventListener("click", () => {
-      // Simple: move to capture for editing
+
       els.input.value = c.text;
-      // remove old card; new save becomes new card (prototype behavior)
+
       cards = cards.filter(x => x.id !== c.id);
       selected.delete(c.id);
       saveCards(cards);
+
       show("capture");
     });
 
@@ -149,76 +159,118 @@ function render() {
     card.appendChild(head);
     card.appendChild(body);
 
+    /* タグ表示 */
+
+    if (c.tags && c.tags.length) {
+
+      const tagBox = document.createElement("div");
+      tagBox.className = "meta";
+      tagBox.style.marginTop = "6px";
+      tagBox.textContent = "#" + c.tags.join(" #");
+
+      card.appendChild(tagBox);
+    }
+
     els.cards.appendChild(card);
   }
 }
 
 function selectedCards() {
-  const sel = cards.filter(c => selected.has(c.id));
-  // preserve newest-first in export
-  return sel;
+  return cards.filter(c => selected.has(c.id));
 }
 
 function mdForCard(card) {
+
   const d = new Date(card.createdAt);
+
   const header = `# ${ymdhmLocal(d)}\n\n`;
-  return header + card.text.trim() + "\n";
+
+  const tagLine = card.tags?.length
+    ? `tags: ${card.tags.join(", ")}\n\n`
+    : "";
+
+  return header + tagLine + card.text.trim() + "\n";
 }
 
 function downloadBlob(blob, filename) {
+
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
+
   a.href = url;
   a.download = filename;
+
   document.body.appendChild(a);
+
   a.click();
+
   a.remove();
+
   URL.revokeObjectURL(url);
 }
 
 async function exportZip() {
+
   const sel = selectedCards();
+
   if (sel.length === 0) {
     alert("受信箱でカードを選択してください。");
     return;
   }
+
   if (typeof JSZip === "undefined") {
-    alert("JSZipが読み込めませんでした。ネット接続が必要です。");
+    alert("JSZipが読み込めませんでした。");
     return;
   }
+
   const zip = new JSZip();
   const pref = (els.prefix.value || "").trim() || "bonmemo_";
 
   for (const c of sel) {
+
     const d = new Date(c.createdAt);
+
     const fname = `${pref}${ymdhmFile(d)}.md`;
+
     zip.file(fname, mdForCard(c));
   }
 
   const content = await zip.generateAsync({ type: "blob" });
+
   downloadBlob(content, `${pref}export.zip`);
 }
 
 function exportOneFile() {
+
   const sel = selectedCards();
+
   if (sel.length === 0) {
     alert("受信箱でカードを選択してください。");
     return;
   }
+
   const pref = (els.prefix.value || "").trim() || "bonmemo_";
+
   const parts = sel.map(c => mdForCard(c) + "\n---\n\n");
+
   const blob = new Blob(parts, { type: "text/markdown;charset=utf-8" });
+
   downloadBlob(blob, `${pref}export.md`);
 }
 
-// Events
+/* events */
+
 els.btnAdd.addEventListener("click", () => {
   addCard(els.input.value);
 });
 
 els.input.addEventListener("keydown", (e) => {
+
   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+
     e.preventDefault();
+
     addCard(els.input.value);
   }
 });
@@ -228,21 +280,31 @@ els.btnCapture.addEventListener("click", () => show("capture"));
 els.btnExport.addEventListener("click", () => show("export"));
 
 els.btnSelectAll.addEventListener("click", () => {
+
   for (const c of cards) selected.add(c.id);
+
   render();
 });
+
 els.btnClearSel.addEventListener("click", () => {
+
   selected.clear();
+
   render();
 });
+
 els.btnDeleteSel.addEventListener("click", () => {
+
   if (selected.size === 0) return;
-  if (confirm("選択したカードを削除します。よろしいですか？")) deleteSelected();
+
+  if (confirm("選択したカードを削除します。よろしいですか？"))
+    deleteSelected();
 });
 
 els.btnExportZip.addEventListener("click", exportZip);
 els.btnExportOne.addEventListener("click", exportOneFile);
 
-// Init
+/* init */
+
 show("capture");
 render();
