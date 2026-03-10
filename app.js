@@ -25,6 +25,7 @@ const els = {
   btnExportZip: document.getElementById("btnExportZip"),
   btnExportOne: document.getElementById("btnExportOne"),
 };
+let activeTag = null;
 
 function nowISO() {
   return new Date().toISOString();
@@ -32,17 +33,17 @@ function nowISO() {
 
 function ymdhmLocal(d) {
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function ymdhmFile(d) {
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
 }
 
 /* タグ抽出 */
 
-function extractTags(text){
+function extractTags(text) {
   const tags = [...text.matchAll(/#([^\s#]+)/g)].map(m => m[1]);
   return [...new Set(tags)];
 }
@@ -106,10 +107,16 @@ function toggleSelect(id, on) {
 }
 
 function render() {
-  els.cards.innerHTML = "";
-  els.emptyState.style.display = cards.length ? "none" : "block";
 
-  for (const c of cards) {
+  els.cards.innerHTML = "";
+
+  const visibleCards = activeTag
+    ? cards.filter(c => c.tags?.includes(activeTag))
+    : cards;
+
+  els.emptyState.style.display = visibleCards.length ? "none" : "block";
+
+  for (const c of visibleCards) {
 
     const d = new Date(c.createdAt);
 
@@ -166,13 +173,46 @@ function render() {
       const tagBox = document.createElement("div");
       tagBox.className = "meta";
       tagBox.style.marginTop = "6px";
-      tagBox.textContent = "#" + c.tags.join(" #");
+
+      c.tags.forEach(tag => {
+
+        const t = document.createElement("span");
+
+        t.textContent = "#" + tag;
+        t.style.marginRight = "10px";
+        t.style.cursor = "pointer";
+
+        t.onclick = () => {
+
+          if (activeTag === tag) {
+            activeTag = null;
+          } else {
+            activeTag = tag;
+          }
+
+          render();
+        };
+
+        tagBox.appendChild(t);
+        if (activeTag) {
+
+          const tagInfo = document.createElement("div");
+
+          tagInfo.className = "meta";
+          tagInfo.style.marginBottom = "10px";
+
+          tagInfo.textContent = "タグ検索: #" + activeTag;
+
+          els.cards.prepend(tagInfo);
+        }
+
+      });
 
       card.appendChild(tagBox);
+      els.cards.appendChild(card);
     }
-
-    els.cards.appendChild(card);
   }
+
 }
 
 function selectedCards() {
