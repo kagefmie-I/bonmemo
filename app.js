@@ -329,13 +329,21 @@ function exportOneFile() {
     return;
   }
 
-  const pref = (els.prefix.value || "").trim() || "bonmemo_";
+  // YYYYMMDD 生成
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+
+  const dateStr = `${y}${m}${d}`;
+
+  const filename = `bonmemo_${dateStr}.md`;
 
   const parts = sel.map(c => mdForCard(c) + "\n---\n\n");
 
   const blob = new Blob(parts, { type: "text/markdown;charset=utf-8" });
 
-  downloadBlob(blob, `${pref}export.md`);
+  downloadBlob(blob, filename);
 }
 
 /* =========================
@@ -344,7 +352,9 @@ function exportOneFile() {
 
 function pickByPrefix(prefix) {
 
-  const pool = cards.filter(c =>
+  const poolSource = [...cards, ...mdCards];
+
+  const pool = poolSource.filter(c =>
     c.tags?.some(t => t.startsWith(prefix))
   );
 
@@ -421,7 +431,57 @@ els.btnDeleteSel.onclick = () => {
 els.btnExportZip.onclick = exportZip;
 els.btnExportOne.onclick = exportOneFile;
 
+/* =========================
+   Markdown読み込み
+========================= */
+
+let mdCards = [];
+
+async function loadMD() {
+
+  try {
+    const res = await fetch("data/ideas.md");
+    const text = await res.text();
+    mdCards = parseMD(text);
+  } catch (e) {
+    console.log("MD読み込み失敗", e);
+    mdCards = [];
+  }
+
+}
+
+function parseMD(text) {
+
+  const blocks = text.split("\n---\n");
+
+  return blocks.map(b => {
+
+    const tagMatch = b.match(/tags:\s*(.+)/);
+
+    const tags = tagMatch
+      ? tagMatch[1].split(",").map(t => t.trim())
+      : [];
+
+    // タイトルっぽい1行目を抽出（雑でOK）
+    const lines = b.split("\n").filter(l => l.trim());
+    const body = lines.slice(2).join(" ");
+
+    return {
+      text: body,
+      tags: tags
+    };
+
+  });
+}
+
 /* init */
 
-show("capture");
-render();
+async function init() {
+
+  await loadMD();
+
+  show("capture");
+  render();
+}
+
+init();
