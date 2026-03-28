@@ -24,6 +24,7 @@ const els = {
   prefix: document.getElementById("prefix"),
   btnExportZip: document.getElementById("btnExportZip"),
   btnExportOne: document.getElementById("btnExportOne"),
+  btnGacha: document.getElementById("btnGacha"),
 };
 
 let activeTag = null;
@@ -337,6 +338,41 @@ function exportOneFile() {
   downloadBlob(blob, `${pref}export.md`);
 }
 
+/* =========================
+   ネタガチャ
+========================= */
+
+function pickByPrefix(prefix) {
+
+  const pool = cards.filter(c =>
+    c.tags?.some(t => t.startsWith(prefix))
+  );
+
+  if (pool.length === 0) return null;
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function getTagValue(card, prefix) {
+
+  const t = card.tags.find(t => t.startsWith(prefix));
+
+  return t ? t.replace(prefix, "") : "";
+}
+
+function generateIdea() {
+
+  const p = pickByPrefix("人物:");
+  const l = pickByPrefix("場所:");
+  const g = pickByPrefix("ジャンル:");
+
+  const pText = p ? getTagValue(p, "人物:") : "誰か";
+  const lText = l ? getTagValue(l, "場所:") : "どこか";
+  const gText = g ? getTagValue(g, "ジャンル:") : "なにか";
+
+  return `${pText}が${lText}で${gText}な話`;
+}
+
 /* events */
 
 els.btnAdd.addEventListener("click", () => {
@@ -355,6 +391,13 @@ els.input.addEventListener("keydown", e => {
 els.btnInbox.onclick = () => show("inbox");
 els.btnCapture.onclick = () => show("capture");
 els.btnExport.onclick = () => show("export");
+els.btnGacha.onclick = () => {
+
+  const idea = generateIdea();
+
+  alert(idea);
+
+};
 
 els.btnSelectAll.onclick = () => {
   for (const c of cards) selected.add(c.id);
