@@ -440,7 +440,7 @@ let mdCards = [];
 async function loadMD() {
 
   try {
-    const res = await fetch("data/ideas.md");
+    const res = await fetch("data/bonmemo_20260329.md");
     const text = await res.text();
     mdCards = parseMD(text);
   } catch (e) {
