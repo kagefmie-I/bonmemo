@@ -24,7 +24,7 @@ const els = {
   prefix: document.getElementById("prefix"),
   btnExportZip: document.getElementById("btnExportZip"),
   btnExportOne: document.getElementById("btnExportOne"),
-  btnGacha: document.getElementById("btnGacha"),
+  btnGacha: document.getElementById("btnGachaFab"),
 };
 
 let activeTag = null;
@@ -382,7 +382,13 @@ function generateIdea() {
 
   return `${pText}が${lText}で${gText}な話`;
 }
+els.btnGacha.onclick = () => {
 
+  const idea = generateIdea();
+
+  alert(idea);
+
+};
 /* events */
 
 els.btnAdd.addEventListener("click", () => {

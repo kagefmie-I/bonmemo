@@ -8,16 +8,26 @@
   <link rel="stylesheet" href="styles.css" />
   <meta name="theme-color" content="#0b0b0c" />
   <link rel="apple-touch-icon" href="icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
 </head>
 
 <body>
   <header class="topbar">
-    <div class="brand">🌫 ぼんやりメモ</div>
+    <div class="brand">
+      <img src="icon.png">
+    </div>
     <div class="actions">
-      <button class="iconbtn" id="btnInbox" aria-label="受信箱">受信箱</button>
-      <button class="iconbtn" id="btnCapture" aria-label="入力">入力</button>
-      <button class="iconbtn" id="btnExport" aria-label="書き出し">書き出し</button>
-      <button class="iconbtn" id="btnGacha">ネタ</button>
+      <button class="iconbtn" id="btnInbox">
+        <span class="material-symbols-rounded">inbox</span>
+      </button>
+
+      <button class="iconbtn" id="btnCapture">
+        <span class="material-symbols-rounded">edit</span>
+      </button>
+
+      <button class="iconbtn" id="btnExport">
+        <span class="material-symbols-rounded">download</span>
+      </button>
     </div>
   </header>
 
@@ -66,6 +76,10 @@
         </p>
       </div>
     </section>
+
+    <button id="btnGachaFab" class="fab">
+      <span class="material-symbols-rounded">casino</span>
+    </button>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
